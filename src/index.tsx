@@ -1,13 +1,8 @@
-import { useState } from 'react';
 import type { HunkExtensionAPI, ExtensionFileViewInput, ExtensionFileViewLayout, ExtensionFileViewRow, ExtensionFileViewRowComponentProps } from 'hunkdiff/extension';
 import { imageHeight, matchesImage, readSide, type ImageSide } from './preview';
 import { createReadBytes } from './bytes';
-
-function Image({ side, width, height }: { side: ImageSide; width: number; height: number }) {
-  const [failed, setFailed] = useState(false);
-  return failed ? <text content="Cannot decode image" width={width} height={height} /> :
-    <image source={side.bytes} fit="fit" protocol="auto" width={width} height={height} onError={() => setFailed(true)} />;
-}
+import { Image } from './image';
+import { ImagePane, selectedImage } from './pane';
 
 function imageRow(sides: ImageSide[], columns: number): ExtensionFileViewRow {
   const height = Math.max(...sides.map(side => imageHeight(side, columns)));
@@ -49,6 +44,12 @@ export default function register(hunk: HunkExtensionAPI): void {
   let cwd = process.cwd();
   hunk.on('startup', event => { cwd = event.cwd; });
   hunk.on('changeset_loaded', (_event, ctx) => { cwd = ctx.cwd; });
+  hunk.registerPane({
+    id: 'preview', title: 'Image', placement: 'bottom', defaultOpen: true,
+    height: { preferred: 20, min: 6, max: 40, fraction: 0.5 },
+    available: context => Boolean(selectedImage(context)),
+    component: props => <ImagePane {...props} cwd={cwd} />,
+  });
   hunk.registerFileView({ id: 'images', title: 'Images', matches: file => matchesImage(file.path), layout: input => layout(input, cwd) });
-  hunk.registerCommand({ id: 'toggle', title: 'Toggle images', key: 'f8' }, ctx => { ctx.fileViews.toggle('images'); });
+  hunk.registerCommand({ id: 'toggle', title: 'Toggle image pane', key: 'f8' }, ctx => { ctx.panes.toggle('preview'); });
 }

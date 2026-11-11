@@ -73,10 +73,10 @@ test('cancelled reads reject; files with source hunks use raw diff', async () =>
 test('accepts API 32 and registers F8 toggle', () => {
   expect(() => register({ apiVersion: 31 } as unknown as HunkExtensionAPI)).toThrow('API 32');
   let command: unknown; let selected = '';
-  register({ apiVersion: 32, on: () => {}, registerFileView: () => {}, registerCommand: (meta: unknown, handler: (ctx: unknown) => void) => {
-    command = meta; handler({ fileViews: { toggle: (id: string) => { selected = id; } } });
+  register({ apiVersion: 32, on: () => {}, registerPane: () => {}, registerFileView: () => {}, registerCommand: (meta: unknown, handler: (ctx: unknown) => void) => {
+    command = meta; handler({ panes: { toggle: (id: string) => { selected = id; } } });
   } } as unknown as HunkExtensionAPI);
-  expect(command).toMatchObject({ key: 'f8' }); expect(selected).toBe('images');
+  expect(command).toMatchObject({ key: 'f8' }); expect(selected).toBe('preview');
 });
 
 test('image component renders through OpenTUI and releases on unmount', async () => {

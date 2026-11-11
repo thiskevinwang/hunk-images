@@ -83,14 +83,10 @@ with tempfile.TemporaryDirectory(prefix='hunk-images-test-') as folder:
         return data
 
     try:
-        startup = read_for(4)
-        try:
-            os.write(fd, b'\x1b[19~')  # F8
-        except OSError:
-            raise AssertionError(re.sub(rb'\x1b\[[0-?]*[ -/]*[@-~]', b'', startup).decode(errors='replace'))
-        preview = read_for(3)
+        # No keypress: the image pane must display at startup.
+        preview = read_for(5)
         plain = re.sub(rb'\x1b\[[0-?]*[ -/]*[@-~]', b'', preview)
-        assert b'Before' in plain and b'After' in plain, (startup + preview)[-6000:]
+        assert b'After' in plain and (mode == 'untracked' or b'Before' in plain), preview[-6000:]
         graphics = re.findall(rb'\x1b_G([^;\x1b]*)(?:;[^\x1b]*)?\x1b\\', preview)
         assert any(b'a=t' in g or b'a=T' in g for g in graphics), graphics
         # Decode complete Kitty transfers to prove the staged blue image reached output.
@@ -127,7 +123,10 @@ with tempfile.TemporaryDirectory(prefix='hunk-images-test-') as folder:
         os.write(fd, b'\x1b[19~')
         cleared = read_for(2)
         assert b'a=d' in resized + cleared, 'No graphics cleanup after resize/toggle'
-        print(f'PASS ({mode}): host loaded extension; F8 emitted expected image pixels; resize/toggle removed image placements.')
+        os.write(fd, b'\x1b[19~')
+        restored = read_for(2)
+        assert b'\x1b_G' in restored, 'F8 did not restore the image pane'
+        print(f'PASS ({mode}): pane emitted expected image pixels without input; resize and F8 hide/show passed.')
     finally:
         os.kill(pid, signal.SIGTERM)
         read_for(0.3)
