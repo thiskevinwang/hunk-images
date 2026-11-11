@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { HunkExtensionAPI, ExtensionFileViewInput, ExtensionFileViewLayout, ExtensionFileViewRow, ExtensionFileViewRowComponentProps } from 'hunkdiff/extension';
 import { imageHeight, matchesImage, readSide, type ImageSide } from './preview';
+import { createReadBytes } from './bytes';
 
 function Image({ side, width, height }: { side: ImageSide; width: number; height: number }) {
   const [failed, setFailed] = useState(false);
@@ -24,9 +25,10 @@ function imageRow(sides: ImageSide[], columns: number): ExtensionFileViewRow {
   };
 }
 
-export async function layout(input: ExtensionFileViewInput): Promise<ExtensionFileViewLayout | null> {
+export async function layout(input: ExtensionFileViewInput, cwd = process.cwd()): Promise<ExtensionFileViewLayout | null> {
   if (input.width < 1 || input.file.hunks?.length) return null;
-  const sides = await Promise.all([readSide(input, 'old'), readSide(input, 'new')]);
+  const readBytes = createReadBytes(input, cwd);
+  const sides = await Promise.all([readSide(input, 'old', readBytes), readSide(input, 'new', readBytes)]);
   input.signal.throwIfAborted();
   const rows: ExtensionFileViewRow[] = [];
   if (input.width >= 60 && sides.every(side => side.bytes)) {
@@ -43,7 +45,10 @@ export async function layout(input: ExtensionFileViewInput): Promise<ExtensionFi
 }
 
 export default function register(hunk: HunkExtensionAPI): void {
-  if (hunk.apiVersion < 33) throw new Error('hunk-images requires Hunk extension API 33 or later.');
-  hunk.registerFileView({ id: 'images', title: 'Images', matches: file => matchesImage(file.path), layout });
+  if (hunk.apiVersion < 32) throw new Error('hunk-images requires Hunk 0.24.1 (extension API 32) or later.');
+  let cwd = process.cwd();
+  hunk.on('startup', event => { cwd = event.cwd; });
+  hunk.on('changeset_loaded', (_event, ctx) => { cwd = ctx.cwd; });
+  hunk.registerFileView({ id: 'images', title: 'Images', matches: file => matchesImage(file.path), layout: input => layout(input, cwd) });
   hunk.registerCommand({ id: 'toggle', title: 'Toggle images', key: 'f8' }, ctx => { ctx.fileViews.toggle('images'); });
 }

@@ -1,8 +1,7 @@
 import { imageSize } from 'image-size';
-import type { ExtensionFileViewInput } from 'hunkdiff/extension';
-import type {} from './api33';
+import { createReadBytes, MAX_BYTES, type ImageInput, type ReadBytes } from './bytes';
 
-export const MAX_BYTES = 20 * 1024 * 1024;
+export { MAX_BYTES } from './bytes';
 export const MAX_PIXELS = 40_000_000;
 const FORMATS = new Set(['png', 'jpg', 'gif', 'webp']);
 
@@ -18,12 +17,12 @@ export function matchesImage(path: string): boolean {
   return /\.(png|jpe?g|gif|webp)$/i.test(path);
 }
 
-export async function readSide(input: ExtensionFileViewInput, side: 'old' | 'new'): Promise<ImageSide> {
+export async function readSide(input: ImageInput, side: 'old' | 'new', readBytes: ReadBytes = createReadBytes(input, process.cwd())): Promise<ImageSide> {
   const label = side === 'old' ? 'Before' : 'After';
   if (input.file.changeType === (side === 'old' ? 'new' : 'deleted')) {
     return { label, caption: `${label} · not present` };
   }
-  const bytes = await input.readBytes(side);
+  const bytes = await readBytes(side);
   input.signal.throwIfAborted();
   if (!bytes) return { label, caption: `${label} · unavailable` };
   if (bytes.length > MAX_BYTES) return { label, caption: `${label} · exceeds 20 MiB` };

@@ -3,16 +3,17 @@ import { act, type ReactElement } from 'react';
 import { readFileSync } from 'node:fs';
 import { testRender } from '@opentui/react/test-utils';
 import { NativeImage, resolveImageRenderProtocol } from '@opentui/core';
-import type { ExtensionFileViewInput, HunkExtensionAPI } from 'hunkdiff/extension';
+import type { HunkExtensionAPI } from 'hunkdiff/extension';
 import register, { layout } from '../src/index';
 import { matchesImage, MAX_BYTES, readSide } from '../src/preview';
+import type { ImageInput } from '../src/bytes';
 
 const before = readFileSync(new URL('./fixtures/before.png', import.meta.url));
 const after = readFileSync(new URL('./fixtures/after.png', import.meta.url));
-function input(overrides: Partial<ExtensionFileViewInput> = {}): ExtensionFileViewInput {
+function input(overrides: Partial<ImageInput> = {}): ImageInput {
   return { file: { path: 'image.png', changeType: 'modified', hunks: [] }, width: 80,
     signal: new AbortController().signal, changes: [], readDocument: async () => null,
-    readBytes: async side => side === 'old' ? before : after, ...overrides } as ExtensionFileViewInput;
+    readBytes: async side => side === 'old' ? before : after, ...overrides } as ImageInput;
 }
 
 test('accepts supported suffixes, including uppercase', () => {
@@ -69,10 +70,10 @@ test('cancelled reads reject; files with source hunks use raw diff', async () =>
   expect(await layout(input({ file: { ...value.file, hunks: [{ index: 0, header: '@@ -1 +1 @@' }] } }))).toBeNull();
 });
 
-test('requires API 33 and registers F8 toggle', () => {
-  expect(() => register({ apiVersion: 32 } as HunkExtensionAPI)).toThrow('API 33');
+test('accepts API 32 and registers F8 toggle', () => {
+  expect(() => register({ apiVersion: 31 } as unknown as HunkExtensionAPI)).toThrow('API 32');
   let command: unknown; let selected = '';
-  register({ apiVersion: 33, registerFileView: () => {}, registerCommand: (meta: unknown, handler: (ctx: unknown) => void) => {
+  register({ apiVersion: 32, on: () => {}, registerFileView: () => {}, registerCommand: (meta: unknown, handler: (ctx: unknown) => void) => {
     command = meta; handler({ fileViews: { toggle: (id: string) => { selected = id; } } });
   } } as unknown as HunkExtensionAPI);
   expect(command).toMatchObject({ key: 'f8' }); expect(selected).toBe('images');

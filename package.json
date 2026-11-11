@@ -4,7 +4,7 @@
   "description": "Image previews for hunk diff.",
   "type": "module",
   "repository": "github:thiskevinwang/hunk-images",
-  "hunk": { "apiVersion": 33, "extensions": ["./src/index.tsx"] },
+  "hunk": { "apiVersion": 32, "extensions": ["./src/index.tsx"] },
   "scripts": { "test": "bun test", "typecheck": "tsc --noEmit", "test:terminal": "python3 test/terminal.py" },
   "dependencies": { "image-size": "2.0.2" },
   "devDependencies": {
