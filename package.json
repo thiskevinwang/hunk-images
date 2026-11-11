@@ -1,0 +1,19 @@
+{
+  "name": "hunk-images",
+  "version": "0.1.0",
+  "description": "Image previews for hunk diff.",
+  "type": "module",
+  "repository": "github:thiskevinwang/hunk-images",
+  "hunk": { "apiVersion": 33, "extensions": ["./src/index.tsx"] },
+  "scripts": { "test": "bun test", "typecheck": "tsc --noEmit", "test:terminal": "python3 test/terminal.py" },
+  "dependencies": { "image-size": "2.0.2" },
+  "devDependencies": {
+    "@opentui/core": "0.5.6",
+    "@opentui/react": "0.5.6",
+    "@types/bun": "latest",
+    "@types/react": "19.2.14",
+    "hunkdiff": "0.24.1",
+    "react": "19.2.4",
+    "typescript": "^5.9.3"
+  }
+}
